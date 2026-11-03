@@ -21,8 +21,40 @@ Custom Terraform provider for SeaweedFS IAM operations.
   - Create/Update via `PutUserPolicy`
   - Read via `GetUserPolicy`
   - Delete via `DeleteUserPolicy`
+- `seaweedfs_iam_group`: manage a group; deletion is refused while it has members or policies.
+- `seaweedfs_iam_managed_policy`: manage a reusable policy and its default version.
+- `seaweedfs_iam_group_membership`: manage one group/user membership.
+- `seaweedfs_iam_group_policy_attachment`: attach one managed policy to a group.
 
-The provider intentionally avoids IAM actions that are commonly unsupported by SeaweedFS compatibility layers (for example group-membership listing during user deletion).
+Group resources require SeaweedFS IAM group and managed policy APIs. Existing groups, policies, memberships, attachments, and inline user policies must be imported before managing them. Import does not migrate or remove existing grants. API availability and effective permissions should be verified for your SeaweedFS version before applying changes.
+
+## Group policy example
+
+```hcl
+resource "seaweedfs_iam_group" "readers" {
+  name = "readers"
+}
+
+resource "seaweedfs_iam_managed_policy" "read" {
+  name = "read-example"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{ Effect = "Allow", Action = ["s3:GetObject"], Resource = ["arn:aws:s3:::example/*"] }]
+  })
+}
+
+resource "seaweedfs_iam_group_policy_attachment" "read" {
+  group_name = seaweedfs_iam_group.readers.name
+  policy_arn = seaweedfs_iam_managed_policy.read.arn
+}
+
+resource "seaweedfs_iam_group_membership" "alice" {
+  group_name = seaweedfs_iam_group.readers.name
+  user_name  = "alice" # An existing IAM user
+}
+```
+
+Import IDs: group `name`; managed policy `arn`; membership `group_name/user_name`; group policy attachment `group_name|policy_arn`; inline user policy `user_name/policy_name`. For example, `terraform import seaweedfs_iam_group_membership.alice readers/alice`. Memberships and attachments that already exist are not implicitly adopted. Use quotes around import IDs containing `|` in a shell. Review the plan after import: differing JSON representations can result in an update even when the policies are equivalent.
 
 ## Observed SeaweedFS behavior
 

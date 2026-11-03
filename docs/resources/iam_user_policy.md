@@ -24,3 +24,7 @@ Manages an inline IAM user policy in SeaweedFS.
 ### Read-Only
 
 - `id` (String) The ID of this resource.
+
+## Import
+
+Import an existing inline policy with `terraform import seaweedfs_iam_user_policy.example user_name/policy_name`. Review the plan after import; differing JSON representations may cause an update.

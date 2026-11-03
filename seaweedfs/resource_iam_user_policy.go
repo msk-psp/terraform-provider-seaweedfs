@@ -3,7 +3,9 @@ package seaweedfs
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -12,12 +14,24 @@ import (
 )
 
 var (
-	_ resource.Resource              = &iamUserPolicyResource{}
-	_ resource.ResourceWithConfigure = &iamUserPolicyResource{}
+	_ resource.Resource                = &iamUserPolicyResource{}
+	_ resource.ResourceWithConfigure   = &iamUserPolicyResource{}
+	_ resource.ResourceWithImportState = &iamUserPolicyResource{}
 )
 
 func NewIAMUserPolicyResource() resource.Resource {
 	return &iamUserPolicyResource{}
+}
+
+func (r *iamUserPolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	user, name, ok := strings.Cut(req.ID, "/")
+	if !ok || user == "" || name == "" || strings.Contains(name, "/") {
+		resp.Diagnostics.AddError("Invalid import ID", "Expected user_name/policy_name.")
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), user+":"+name)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("user_name"), user)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), name)...)
 }
 
 type iamUserPolicyResource struct {

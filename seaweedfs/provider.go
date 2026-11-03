@@ -142,6 +142,10 @@ func (p *seaweedfsProvider) Resources(_ context.Context) []func() resource.Resou
 		NewIAMUserResource,
 		NewIAMAccessKeyResource,
 		NewIAMUserPolicyResource,
+		NewIAMGroupResource,
+		NewIAMGroupMembershipResource,
+		NewIAMGroupPolicyAttachmentResource,
+		NewIAMManagedPolicyResource,
 	}
 }
 
